@@ -1,0 +1,7 @@
+---
+description: project specific rules
+globs: 
+alwaysApply: true
+---
+
+# add rules relevant for the feature-branch

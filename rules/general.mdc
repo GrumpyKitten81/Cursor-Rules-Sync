@@ -1,0 +1,9 @@
+---
+description: general project and rule settings
+globs: 
+alwaysApply: true
+---
+# add rules relevant for all feature-branches
+
+
+
