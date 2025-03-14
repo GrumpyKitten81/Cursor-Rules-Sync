@@ -15,6 +15,7 @@ EXCLUDED_PATHS = [
     "update.py",
     "test_scripts.py",
     "todo.txt",
+    "img",
 ]
 
 

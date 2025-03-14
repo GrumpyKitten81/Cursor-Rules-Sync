@@ -64,6 +64,7 @@ Below is a general workflow for setting up and using this repository in your pro
 
 1. **Create a new GitHub repository** by using this repository as a template.  
    This will be your independent repository where you add your rules for sharing across projects.
+   ![Hint for template button](./img/template.png)
 
 2. **Clone** that new repository locally:
    ```bash
@@ -97,6 +98,11 @@ Below is a general workflow for setting up and using this repository in your pro
    git commit -m "Add Cursor-Rules submodule"
    git push
    ```
+
+5. Example:
+
+   ![Example folder structure](./img/structure.png)
+
 
 ---
 
