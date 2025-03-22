@@ -10,7 +10,8 @@ import subprocess
 
 FILES_TO_UPDATE = [
     "README.md",
-    "rules/general.mdc",
+	"rules/general.mdc",
+	".gitattributes",
 ]
 
 SKIP_BRANCHES = ["main"]  # Ignore these branches, e.g., 'main', 'master', etc.
