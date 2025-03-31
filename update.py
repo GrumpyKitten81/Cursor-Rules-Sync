@@ -9,28 +9,34 @@ import subprocess
 # --- CONFIGURATION ---
 
 FILES_TO_UPDATE = [
-    "README.md",
-	"rules/general.mdc",
-	".gitattributes",
+    # These files are updated only if they exist in the branch
+    "rules/general.mdc",
 ]
+
+FILES_TO_FORCE_UPDATE = [
+    ".gitattributes",
+]  # These files are always updated unconditionally
 
 SKIP_BRANCHES = ["main"]  # Ignore these branches, e.g., 'main', 'master', etc.
 
 # --- HELPER FUNCTIONS ---
 
 
-def run_cmd(cmd, check=True):
+def run_cmd(cmd, check=True, allow_fail=False):
     """
-    Executes a shell command using subprocess and
-    prints stdout + stderr if check=True and the command fails.
+    Executes a shell command using subprocess and handles errors gracefully.
+    If allow_fail is True, the function will not raise an exception on failure.
     """
-    result = subprocess.run(cmd, capture_output=True, text=True, check=check)
-    if check and result.returncode != 0:
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=check)
+        return result
+    except subprocess.CalledProcessError as e:
         print(f"Error executing: {' '.join(cmd)}")
-        print("stdout:", result.stdout)
-        print("stderr:", result.stderr)
-        raise subprocess.CalledProcessError(result.returncode, cmd)
-    return result
+        print("stdout:", e.stdout)
+        print("stderr:", e.stderr)
+        if not allow_fail:
+            raise
+        return e  # Return the exception object for further inspection
 
 
 def get_remote_branches(skip_branches):
@@ -98,7 +104,7 @@ def main():
 
         changes_made = False
 
-        # 4) Get files from 'main' (if they exist in the branch at all)
+        # 4) Get files from 'main' (conditional update)
         for file_path in FILES_TO_UPDATE:
             if os.path.exists(file_path):
                 print(f"-> Updating {file_path} from main in branch '{local_branch}'")
@@ -116,11 +122,33 @@ def main():
                     f"-> {file_path} does not exist in branch '{local_branch}', skipping."
                 )
 
-        # 5) Commit & Push if changes were made
+        # 5) Get files from 'main' (unconditional update)
+        for file_path in FILES_TO_FORCE_UPDATE:
+            print(
+                f"-> Forcing update of {file_path} from main in branch '{local_branch}'"
+            )
+            # Overwrite local file with the state from main
+            run_cmd(["git", "checkout", "main", "--", file_path], check=True)
+            changes_made = True  # Always mark changes as made for forced updates
+
+        # 6) Commit & Push if changes were made
         if changes_made:
             print(f"-> Committing and pushing changes in branch '{local_branch}' ...")
-            run_cmd(["git", "commit", "-am", "Propagate changes from main"])
-            run_cmd(["git", "push"])
+            commit_result = run_cmd(
+                ["git", "commit", "-am", "Propagate changes from main"], allow_fail=True
+            )
+            if commit_result.returncode != 0:
+                print(
+                    f"-> Commit failed in branch '{local_branch}'. Skipping push. Details:"
+                )
+                print(commit_result.stderr)
+                continue  # Skip pushing and move to the next branch
+
+            push_result = run_cmd(["git", "push"], allow_fail=True)
+            if push_result.returncode != 0:
+                print(f"-> Push failed in branch '{local_branch}'. Details:")
+                print(push_result.stderr)
+                continue
         else:
             print(f"-> No changes in branch '{local_branch}'.")
 
